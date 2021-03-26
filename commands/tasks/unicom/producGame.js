@@ -1,4 +1,5 @@
 // 娱乐中心
+
 const CryptoJS = require("crypto-js");
 var crypto = require('crypto');
 const { default: PQueue } = require('p-queue');
@@ -23,7 +24,6 @@ var deviceInfos = [
 var deviceInfo = deviceInfos[Math.floor(Math.random() * deviceInfos.length)]
 
 var producGame = {
-    // 娱乐中心每日签到-打卡
     gameSignin: (axios, options) => {
         const useragent = buildUnicomUserAgent(options, 'p')
         let data = {
@@ -145,7 +145,6 @@ var producGame = {
 
             console.info(Buffer.from(res.data).toString('hex'))
 
-            // 这里不等待1分钟，上面使用 n*62 时长累计来替代，也可正常领取
             await new Promise((resolve, reject) => setTimeout(resolve, 45 * 1000))
 
             ++n
@@ -352,7 +351,6 @@ var producGame = {
             data: transParams(params)
         })
         if (data.code === '0000') {
-            // reachState 0未完成, 1未领取, 2已完成
             return {
                 jar: config.jar,
                 games: data.data
@@ -364,16 +362,14 @@ var producGame = {
     },
     doGameFlowTask: async (axios, options) => {
         let { popularList: allgames, jar } = await producGame.popularGames(axios, options)
-        let games = await producGame.timeTaskQuery(axios, options)
-        games = allgames.filter(g => games.filter(g => g.state === '0').map(i => i.gameId).indexOf(g.id) !== -1)
+      let games = allgames
+        console.info('苏念修复补丁正在运行✅')
         console.info('剩余未完成game', games.length)
-        let queue = new PQueue({ concurrency: 2 });
+        let queue = new PQueue({ concurrency: 1 });
 
-        // 特例游戏
-        // 亿万豪车2
         let others = ['1110422106']
 
-        console.info('调度任务中', '并发数', 2)
+        console.info('调度任务中', '并发数', 1)
         for (let game of games) {
             queue.add(async () => {
                 console.info(game.name)
@@ -415,9 +411,9 @@ var producGame = {
         let { games, jar } = await producGame.getTaskList(axios, options)
         games = games.filter(d => d.task === '5' && d.reachState === '0' && d.task_type === 'duration')
         console.info('剩余未完成game', games.length)
-        let queue = new PQueue({ concurrency: 2 });
+        let queue = new PQueue({ concurrency: 1 });
 
-        console.info('调度任务中', '并发数', 2)
+        console.info('调度任务中', '并发数', 1)
         for (let game of games) {
             queue.add(async () => {
                 console.info(game.name)
@@ -486,7 +482,7 @@ var producGame = {
         })
         if (data) {
             console.info(data.msg)
-            return data.data//0未进行 state=1待领取 state=2已完成
+            return data.data
         } else {
             console.error('记录失败')
         }
@@ -516,9 +512,9 @@ var producGame = {
         if (data) {
             console.info(data.msg)
             if (data.msg.indexOf('防刷策略接口校验不通过') !== -1) {
-                throw new Error('出现【防刷策略接口校验不通过】, 取消本次执行')
+               console.error('获取奖励失败')
             }
-            console.reward('flow', 100)
+            console.reward('flow', '100m')
         } else {
             console.error('获取奖励失败')
         }
@@ -545,7 +541,8 @@ var producGame = {
         if (data) {
             console.info(data.msg)
             if (data.msg.indexOf('防刷策略接口校验不通过') !== -1) {
-                throw new Error('出现【防刷策略接口校验不通过】, 取消本次执行')
+            //    throw new Error('出现【防刷策略接口校验不通过】, 取消本次执行')
+            console.error('获取奖励失败')
             }
             console.reward('integral', 5)
         } else {
@@ -564,10 +561,10 @@ var producGame = {
     },
     watch3TimesVideoQuery: async (request, options) => {
         let params = {
-            'arguments1': 'AC20200728150217', // acid
-            'arguments2': 'GGPD', // yhChannel
-            'arguments3': '96945964804e42299634340cd2650451', // yhTaskId menuId
-            'arguments4': new Date().getTime(), // time
+            'arguments1': 'AC20200728150217', 
+            'arguments2': 'GGPD', 
+            'arguments3': '96945964804e42299634340cd2650451', 
+            'arguments4': new Date().getTime(), 
             'arguments6': '',
             'netWay': 'Wifi',
             'version': appInfo.unicom_version,
@@ -641,8 +638,8 @@ var producGame = {
                 ...options,
                 taskCenterId: today_task.id
             })
-            console.reward('flow', 200)
-            console.info('领取完成今日任务流量+200')
+            console.reward('flow', '200m')
+            console.info('领取完成今日任务流量+200m')
         } else if (today_task.reachState === '2') {
             console.info('每日日常任务已完成')
         }
